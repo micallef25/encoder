@@ -1,6 +1,6 @@
-#ifndef _CDC_H_
-#define _CDC_H_
+// #ifndef _CDC_H_
+// #define _CDC_H_
 
-void test_cdc();
+// void test_cdc();
 
-#endif
+// #endif
