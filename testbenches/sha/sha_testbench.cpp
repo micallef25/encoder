@@ -84,7 +84,7 @@ void test_string_size()
 			std::cout << "speed up " << speedup << std::endl;
 
 			// format of hw,sw,speedup
-			fprintf(fptr,"%d,%llu,%llu,%f",i,hw_ctr.cpu_cycles(),sw_ctr.cpu_cycles(),speedup);
+			fprintf(fptr,"%d,%lu,%lu,%f",i,hw_ctr.cpu_cycles(),sw_ctr.cpu_cycles(),speedup);
 
 			//
 			hw_ctr.reset();
@@ -197,7 +197,7 @@ void test_constant_size()
 			std::cout << "speed up " << speedup << std::endl;
 
 			// format of bytes,hw,sw,speedup
-			fprintf(fptr,"%d,%llu,%llu,%f",MAX_BUFF_SIZE,hw_ctr.cpu_cycles(),sw_ctr.cpu_cycles(),speedup);
+			fprintf(fptr,"%d,%lu,%lu,%f",MAX_BUFF_SIZE,hw_ctr.cpu_cycles(),sw_ctr.cpu_cycles(),speedup);
 
 			//
 			hw_ctr.reset();
@@ -254,7 +254,7 @@ void test_pipeline()
 		return 0;
 	}
 
-	std::cout << "running varying string SHA tests" << std::endl;
+	std::cout << "pipelining 4 SHA accelerators..." << std::endl;
 
 	for(int i = 0; i < 16; i++)
 	{
@@ -327,7 +327,7 @@ for(int i = 0; i < 16; i++)
 		std::cout << "speed up " << speedup << std::endl;
 
 		// format of bytes,hw,sw,speedup
-		fprintf(fptr,"%d,%llu,%llu,%f",MAX_BUFF_SIZE,hw_ctr.cpu_cycles(),sw_ctr.cpu_cycles(),speedup);
+		fprintf(fptr,"%d,%lu,%lu,%f",MAX_BUFF_SIZE,hw_ctr.cpu_cycles(),sw_ctr.cpu_cycles(),speedup);
 
 		//
 		hw_ctr.reset();

@@ -17,7 +17,7 @@
 #define DONE_BIT_33 (0x100000000)
 
 /****************************** TYPES ******************************/
-// for some reason making it ap int is bad
+// for some reason making it ap int is not  working
 // FIFO LUTS go up about 1% if we use primitive types instead of custom
  typedef unsigned long long uint33_t;
  typedef unsigned short uint10_t;
@@ -226,8 +226,8 @@ while(!done)
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
 	message_loop_1:for (i = 0; i < 16; ++i)
 	{
-#pragma HLS pipeline II=1
-
+//#pragma HLS pipeline II=1
+#pragma HLS unroll factor=2
 		// with a message size of 32 bits we can achieve an II of 1
 		strm_msg =  message_strm_in.read();
 
@@ -264,18 +264,21 @@ while(!done)
 	//  sig0 and sig1 take rougly 11 cycles each. This loop costs us about
 	// 11 + 11 + 3 + 4 = 29 * 48 = ~1300 cycles
 	//
-	message_loop_2:for ( ; i < 64; ++i)
+	message_loop_2:for ( ; i < 63; ++i)
 	{
-#pragma HLS pipeline II=1
+// TODo if we have one instance we can pipelin else we have to unroll
+#pragma HLS unroll factor=2
+// #pragma HLS pipeline II=1
 		unsigned int message = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
 		m[i] = message;
 
 		// if last then set done bit if it was encountered
-		if(i == 63)
-			message_stream_out.write(message | done);
-		else
-			message_stream_out.write(message);
+		message_stream_out.write(message);
 	}
+
+// save a mux by no if else
+	unsigned int message = SIG1(m[63 - 2]) + m[63 - 7] + SIG0(m[63 - 15]) + m[i - 16];
+	message_stream_out.write(message | done);
 }
 }
 
