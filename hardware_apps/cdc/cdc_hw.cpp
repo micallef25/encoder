@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "cdc_hw.h"
+#include <hls_stream.h>
 
 
 #define FP_POLY 0xbfe6b8a5bf378d83ULL
@@ -15,6 +16,20 @@
 #define PRIME 3
 #define MAX_CHUNK_SIZE 8192
 #define MIN_CHUNK_SIZE 2048
+#define DONE_BIT_9 (0x100)
+
+// helps for testing out streaming without any other features built
+void cdc_hw_interface(unsigned char input[4096],hls::stream<unsigned short> &interface_stream_out,int length)
+{
+	int i = 0;
+	for(i = 0; i < length-1;i++)
+	{
+#pragma HLS LOOP_TRIPCOUNT min=64 max=64
+#pragma HLS pipeline II=1
+		interface_stream_out.write( (input[i] & ~DONE_BIT_9) );
+	}
+	interface_stream_out.write((input[i] | DONE_BIT_9) );
+}
 
 /*
 * create a quick look up table to compute the power instead of recalculating every iteration
@@ -41,7 +56,7 @@ void create_table(uint64_t polynomial_lookup_buf[256],uint64_t prime_table[256])
 * given a string iterate through and compute our finger print boundaries
 * might be able to exploit 122 bit packing rw here depending on speed up
 */
-int patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_t* cdc_test_check)
+void patternSearch(hls::stream<unsigned short> &stream_in,cdc_test_t* cdc_test_check)
 {
     // assign the incoming text to our file block
     uint8_t window[RAB_POLYNOMIAL_WIN_SIZE];
@@ -50,6 +65,10 @@ int patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_t* cdc_
     uint64_t textHash = 0;
     uint8_t chunk_buff[MAX_CHUNK_SIZE];
     uint64_t chunks = 0;
+    int file_length = 0;
+#pragma HLS array_partition variable=window complete dim=1
+#pragma HLS array_partition variable=polynomial_lookup_buf complete dim=1
+#pragma HLS array_partition variable=prime_table complete dim=1
 
     // 
     create_table(polynomial_lookup_buf,prime_table);
@@ -57,24 +76,34 @@ int patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_t* cdc_
     // place first window into the chunk
     for (int j = 0; j < RAB_POLYNOMIAL_WIN_SIZE; j++) {
 #pragma HLS pipeline II=1
-        textHash += buff[j] * polynomial_lookup_buf[(RAB_POLYNOMIAL_WIN_SIZE - 1) - j];
-        window[j] = buff[j];
+    	unsigned short in = stream_in.read();
+        textHash += (unsigned char)in * polynomial_lookup_buf[(RAB_POLYNOMIAL_WIN_SIZE - 1) - j];
+        window[j] = (unsigned char)in;
     }
     
     uint8_t evict = 0;
-    uint8_t new_char = 0;
+    uint16_t new_char = 0;
     uint8_t old_char = 0;
     uint64_t power = 0;
 
     uint16_t length = RAB_POLYNOMIAL_WIN_SIZE;
+    unsigned short done = 0;
 
     // iterate through entire length
-    hash:for (int i = RAB_POLYNOMIAL_WIN_SIZE; i < file_length; i++)
+//    hash:for (int i = RAB_POLYNOMIAL_WIN_SIZE; i < file_length; i++)
+    hash:while(!done)
     {
+#pragma HLS LOOP_TRIPCOUNT min=64 max=64
 #pragma HLS pipeline II=1
         // get incoming and outgoing byte
-        new_char = buff[i];
+        new_char = stream_in.read();
         old_char = window[evict];
+
+        // extract the bit if it exists
+        done = new_char & DONE_BIT_9;
+
+        // clear bit
+        new_char &= ~DONE_BIT_9;
 
         // look in the prime table for value to take away from the hash
         power = prime_table[old_char];
@@ -110,7 +139,7 @@ int patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_t* cdc_
             //    stream.write(buff[j]);
 
             // store the chunk and then clear the chunk
-            std::cout << "chunk size " << length << std::endl;
+            //std::cout << "chunk size " << length << std::endl;
             length = 0;
             chunks++;
         }// found chunk
@@ -130,10 +159,25 @@ int patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_t* cdc_
 //        stream.write(window[j]);
 //    }
 
+    // account last chunk
+    chunks++;
 
-    std::cout << "chunks found " << chunks << std::endl;
-    std::cout << "average chunk size " << file_length / chunks << std::endl;
+    std::cout << "hw chunks found " << chunks << std::endl;
+    std::cout << "hw average chunk size " << file_length / chunks << std::endl;
     cdc_test_check->avg_chunksize =  file_length / chunks;
     cdc_test_check->chunks = chunks;
-    return 1;
+}
+
+void cdc_top(unsigned char buff[4096], unsigned int file_length,cdc_test_t* cdc_test_check)
+{
+	static hls::stream<unsigned short> stream;
+#pragma HLS STREAM variable=stream depth=2
+
+
+	// stream data into modules to compute sha256 digest
+	// http://www.iwar.org.uk/comsec/resources/cipher/sha256-384-512.pdf
+#pragma HLS DATAFLOW
+	cdc_hw_interface(buff,stream,file_length);
+	patternSearch(stream,cdc_test_check);
+	//output(hash_stream,outbuff);
 }

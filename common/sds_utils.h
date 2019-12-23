@@ -66,7 +66,7 @@ namespace sds_utils {
         perf_counter() : tot(0), cnt(0), calls(0) {};
         inline void reset() { tot = cnt = calls = 0; }
         inline void start() { cnt = 1; calls++; };
-        inline void stop() { tot += 1 };
+        inline void stop() { tot += 1; };
         inline uint64_t avg_cpu_cycles() {return (tot / calls); };
         inline uint64_t cpu_cycles() {return tot;};
     };

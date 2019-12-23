@@ -9,7 +9,10 @@
 
 // default is pipelining we can only run certain tests
 // due to synthesis creating too many interfaces and using up all the resources
+#define TEST_STRINGS
+
 #ifdef TEST_STRINGS
+
 
 void test_string_size()
 {
@@ -171,9 +174,9 @@ void test_constant_size()
 			break;
 		}
 
-		Free(buffer);
 	}
 
+	Free(buffer);
 	FreeInt(shaout_sw);
 	FreeInt(shaout_hw);
 	fclose(fptr);
@@ -299,13 +302,13 @@ for(int i = 0; i < 16; i++)
 int run_sha_testbench()
 {
 
-	//
-	//test_string_size();
 	
-	//
-	//test_constant_size();
+	test_string_size();
 
-#ifdef __SDSCC__
+
+	test_constant_size();
+
+#if defined(__SDSCC__) && defined(PIPELINE_TEST)
 	//
 	test_pipeline();
 #endif

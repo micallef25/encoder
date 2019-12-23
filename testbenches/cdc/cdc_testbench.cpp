@@ -9,8 +9,9 @@
 #include "../../common/sds_utils.h"
 #include "../../common/utils.h"
 
+#define VMLINUZ "C:/school/Penn/SOC/personal/src/src/testfiles/vmlinuz.tar"
 
-void test_cdc_sw( const char* file )
+void test_cdc( const char* file )
 {
     //
 
@@ -18,7 +19,7 @@ void test_cdc_sw( const char* file )
     //
 	FILE* fp = fopen(file,"r" );
 	if(fp == NULL ){
-		perror("invalid file");
+		perror("fopen error");
 		return;
 	}
 		
@@ -42,13 +43,27 @@ void test_cdc_sw( const char* file )
 
 	Rabin* rks = new Rabin;
 	cdc_test_t* test_ptr = new cdc_test_t;
+	cdc_test_t* hw_test_ptr = new cdc_test_t;
 
     // create table and then perform CDC
     rks->create_table();
     rks->patternSearch(buff,file_size,test_ptr);
 
+    // run sw version
+    cdc_top(buff,file_size,hw_test_ptr);
+
+    if(hw_test_ptr->avg_chunksize != test_ptr->avg_chunksize)
+    {
+    	std::cout << "avg chunk size differ " << std::endl;
+    }
+    if(hw_test_ptr->chunks != test_ptr->chunks)
+    {
+    	std::cout << "chunks found differ " << std::endl;
+    }
+
     free(buff);
     delete rks;
+    delete test_ptr;
     return;
 }
 
@@ -67,10 +82,10 @@ void test_cdc_sw( const char* file )
 
 
 
-int test_cdc()
+int run_cdc_testbench()
 {
 
-	test_cdc_sw("file");
+	test_cdc(VMLINUZ);
 	// test_cdc_random();
 	// test_cdc_repeition();
 	return 0;

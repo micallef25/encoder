@@ -8,4 +8,6 @@ typedef struct cdc_test_t
 	int avg_chunksize;
 }cdc_test_t;
 
+int run_cdc_testbench();
+
 #endif

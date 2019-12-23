@@ -102,7 +102,7 @@ int Rabin::patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_
                 chunk += buff[j];
 
             // store the chunk and then clear the chunk
-            std::cout << "chunk size " << chunk.size() << std::endl;
+            //std::cout << "chunk size " << chunk.size() << std::endl;
             chunks.push_back(chunk);
             chunk.clear();
         }// found chunk

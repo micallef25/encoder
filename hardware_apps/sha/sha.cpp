@@ -47,7 +47,7 @@ void sha_out(unsigned int output[8], hls::stream<uint33_t> &out_stream)
 
 
 // helps for testing out streaming without any other features built 
-void hw_interface(unsigned char input[MAX_TEST_SIZE],hls::stream<uint10_t> &interface_stream_out,int length)
+void hw_interface(unsigned char input[MAX_BUFF_SIZE],hls::stream<uint10_t> &interface_stream_out,int length)
 {
 	int i = 0;
 	for(i = 0; i < length-1;i++)
@@ -75,6 +75,7 @@ void producer(hls::stream<uint10_t> &producer_stream_in, hls::stream<uint33_t> &
 	unsigned long long digest_length = 0;
 
 	// we can pump in messages fine.
+	// change the granularity maybe we can read in 16 bits instead of 8
 	produce_message:while(!done)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=3 max=3
@@ -137,6 +138,7 @@ void producer(hls::stream<uint10_t> &producer_stream_in, hls::stream<uint33_t> &
 	printf("msg ctr: %d \n",(unsigned int)msg_ctr);
 	#endif
 
+	// optimize this if else
 	if(msg_ctr < 56){
 		msg_ctr++;
 		while(msg_ctr < 56)
@@ -409,7 +411,7 @@ void transform(hls::stream<uint33_t> &transform_stream_in, unsigned int state[8]
 /*
 * given a string produce a sha256 bit hash
 */
-void sha_hw(unsigned char input[MAX_TEST_SIZE],unsigned int output[8], int length){
+void sha_hw(unsigned char input[MAX_BUFF_SIZE],unsigned int output[8], int length){
 
 	unsigned int state[8];
 	#pragma HLS array_partition variable=state complete dim=1
