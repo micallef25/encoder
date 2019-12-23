@@ -7,6 +7,9 @@
 #include "../../common/sds_utils.h"
 #include "../../common/utils.h"
 
+// default is pipelining we can only run certain tests
+// due to synthesis creating too many interfaces and using up all the resources
+#ifdef TEST_STRINGS
 
 void test_string_size()
 {
@@ -66,7 +69,7 @@ void test_string_size()
 			std::cout << "Test " << i << " passed!" << std::endl;
 
 			float speedup = (float)sw_ctr.cpu_cycles() / (float)hw_ctr.cpu_cycles();
-			
+
 			std::cout << "Bytes processed: " << i * sizeof(char) << " Average number of CPU cycles in hardware: " << hw_ctr.cpu_cycles() << std::endl;
 			std::cout << "Bytes processed: " << i * sizeof(char) << " Average number of CPU cycles in software: " << sw_ctr.cpu_cycles() << std::endl;
 			std::cout << "speed up " << speedup << std::endl;
@@ -97,7 +100,7 @@ void test_string_size()
 
 void test_constant_size()
 {
-	
+
 	unsigned int* shaout_sw = AllocateInt(8 * sizeof(unsigned int));
 	unsigned int* shaout_hw = AllocateInt(8 * sizeof(unsigned int));
 
@@ -148,7 +151,7 @@ void test_constant_size()
 			std::cout << "Test " << i << " passed!" << std::endl;
 
 			float speedup = (float)sw_ctr.cpu_cycles() / (float)hw_ctr.cpu_cycles();
-			
+
 			std::cout << "Bytes processed: " << MAX_BUFF_SIZE * sizeof(char) << " Average number of CPU cycles in hardware: " << hw_ctr.cpu_cycles() << std::endl;
 			std::cout << "Bytes processed: " << MAX_BUFF_SIZE * sizeof(char) << " Average number of CPU cycles in software: " << sw_ctr.cpu_cycles() << std::endl;
 			std::cout << "speed up " << speedup << std::endl;
@@ -175,6 +178,8 @@ void test_constant_size()
 	FreeInt(shaout_hw);
 	fclose(fptr);
 }
+
+#endif
 
 #ifdef __SDSCC__
 void test_pipeline()
@@ -295,10 +300,10 @@ int run_sha_testbench()
 {
 
 	//
-	test_string_size();
+	//test_string_size();
 	
 	//
-	test_constant_size();
+	//test_constant_size();
 
 #ifdef __SDSCC__
 	//
