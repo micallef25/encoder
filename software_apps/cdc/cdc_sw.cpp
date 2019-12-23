@@ -6,6 +6,7 @@
 #include <string>
 #include <cmath>
 #include <vector>
+#include "cdc_sw.h"
 
 #define FP_POLY 0xbfe6b8a5bf378d83ULL
 #define RAB_POLYNOMIAL_CONST 153191
@@ -14,16 +15,13 @@
 #define RAB_BLK_MIN_BITS 12
 #define RAB_BLK_MASK (((1 << RAB_BLK_MIN_BITS) - 1))
 #define PRIME 3
-#define MAX_CHUNKS_SIZE 8000
-#define MIN_CHUNK_SIZE 2000
+#define MAX_CHUNK_SIZE 8192
+#define MIN_CHUNK_SIZE 2048
 
-class Rabin{
-
-public:
 /*
 * create a quick look up table to compute the power instead of recalculating every iteration
 */
-void create_table()
+void Rabin::create_table()
 {
     uint64_t curPower = 1;
     for (int index = 0; index < RAB_POLYNOMIAL_WIN_SIZE + 1; index++)
@@ -42,7 +40,7 @@ void create_table()
 /*
 * given a string iterate through and compute our finger print boundaries
 */
-int patternSearch(unsigned char* buff, unsigned int file_length)
+int Rabin::patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_t* cdc_test_check)
 {
     // assign the incoming text to our file block
     uint8_t window[RAB_POLYNOMIAL_WIN_SIZE];
@@ -95,7 +93,7 @@ int patternSearch(unsigned char* buff, unsigned int file_length)
         uint64_t finger = textHash ^ FP_POLY;
 
         // if we have a fingerprint that is larger than our min chunk or we have exceesed length 
-        if ((((finger & RAB_BLK_MASK) == 0) || (length == 8000)) && (length > 2000))
+        if ((((finger & RAB_BLK_MASK) == 0) || (length == MAX_CHUNK_SIZE)) && (length > MIN_CHUNK_SIZE))
         {
         	length = 0;
 
@@ -129,72 +127,8 @@ int patternSearch(unsigned char* buff, unsigned int file_length)
 
     std::cout << "chunks found " << chunks.size() << std::endl;
     std::cout << "average chunk size " << file_length / chunks.size() << std::endl;
+    cdc_test_check->avg_chunksize =  file_length / chunks.size();
+    cdc_test_check->chunks = chunks.size();
     return 1;
-	}
-
-private:
-	uint64_t polynomial_lookup_buf[256];
-    std::vector<std::string> chunks;
-    std::string chunk;
-    uint64_t prime_table[256];
-}; // class rabin
-
-
-void test_cdc_sw( const char* file )
-{
-    //
-
-    
-    //
-	FILE* fp = fopen(file,"r" );
-	if(fp == NULL ){
-		perror("invalid file");
-		return;
-	}
-		
-	//
-	fseek(fp, 0, SEEK_END); // seek to end of file
-	int file_size = ftell(fp); // get current file pointer
-	fseek(fp, 0, SEEK_SET); // seek back to beginning of file
-
-	//
-	unsigned char* buff = (unsigned char*)(malloc(sizeof(unsigned char) * file_size ));	
-	if(buff == NULL)
-	{
-		perror("not enough space");
-		fclose(fp);
-		return;
-	}	
-	
-	//	
-	int bytes_read = fread(&buff[0],sizeof(unsigned char),file_size,fp);
-	printf("bytes_read %d\n",bytes_read);
-
-	Rabin* rks = new Rabin;
-
-    // create table and then perform CDC
-    rks->create_table();
-    rks->patternSearch(buff,file_size);
-
-    free(buff);
-    delete rks;
-    return;
 }
 
-//
-// TODO add some way of more automated testing
-//
-// int test_cdc()
-// {
-//     // sw tests
-//     test_cdc_sw("file");
-//     test_cdc_sw("file");
-//     test_cdc_sw("file");
-//     test_cdc_sw("file");
-
-//     // hw tests
-//     test_cdc_hw("file");
-//     test_cdc_hw("file");
-//     test_cdc_hw("file");
-//     test_cdc_hw("file");
-// }

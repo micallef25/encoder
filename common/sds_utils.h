@@ -52,6 +52,26 @@ namespace sds_utils {
     };
 }
 
+// for vivado hls
+#else
+
+namespace sds_utils {
+    class perf_counter
+    {
+
+    private:
+        uint64_t tot, cnt, calls;
+
+    public:
+        perf_counter() : tot(0), cnt(0), calls(0) {};
+        inline void reset() { tot = cnt = calls = 0; }
+        inline void start() { cnt = 1; calls++; };
+        inline void stop() { tot += 1 };
+        inline uint64_t avg_cpu_cycles() {return (tot / calls); };
+        inline uint64_t cpu_cycles() {return tot;};
+    };
+}
+
 #endif
 
 #endif
