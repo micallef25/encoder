@@ -6,6 +6,7 @@
 #include <string>
 #include <cmath>
 #include <vector>
+#include "cdc_sw.h"
 
 #define FP_POLY 0xbfe6b8a5bf378d83ULL
 #define RAB_POLYNOMIAL_CONST 153191
@@ -126,8 +127,8 @@ int Rabin::patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_
 
     std::cout << "chunks found " << chunks.size() << std::endl;
     std::cout << "average chunk size " << file_length / chunks.size() << std::endl;
-    cdc_test_check->avg_chunksize =  file_length / chunks;
-    cdc_test_check->chunks = chunks;
+    cdc_test_check->avg_chunksize =  file_length / chunks.size();
+    cdc_test_check->chunks = chunks.size();
     return 1;
 }
 

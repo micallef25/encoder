@@ -9,7 +9,7 @@ int main()
 {
 
 	// this will run everything in the sha test bench
-	test_sha();
+	run_sha_testbench();
 
 	return 0;
 }

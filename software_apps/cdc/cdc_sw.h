@@ -1,6 +1,13 @@
 #ifndef _CDCSW_H_
 #define _CDCSW_H_
 
+
+#include <vector>
+#include <stdint.h>
+#include <string>
+#include "../../testbenches/cdc/cdc_testbench.h"
+
+
 class Rabin{
 	public:
 		void create_table();

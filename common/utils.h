@@ -7,6 +7,10 @@
 #define NUM_CHUNKS 	25000 //ceil(INPUT_SIZE/MAX_CHUNK) This doesn't work because of static array needing constant length
 #define MAX_OUTPUT_SIZE 150000000 //WAY too large, but conservative, noting that encoded value may be larger than original
 
+
+#define MAX_TEST_SIZE 32784 // 32k
+#define MAX_BUFF_SIZE 32784 // 32k
+
 void handle_input(int argc, char* argv[],int* chunksize);
 unsigned char * Allocate(int Size);
 void Free(unsigned char * Frame);

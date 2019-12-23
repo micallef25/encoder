@@ -13,12 +13,12 @@ typedef struct wide_dt_struct{
 
 #pragma SDS data copy(in1[0:size],in2[0:size], out[0:size])
 #pragma SDS data mem_attribute( in1:PHYSICAL_CONTIGUOUS ,in2:PHYSICAL_CONTIGUOUS , out:PHYSICAL_CONTIGUOUS  )
-#pragma SDS data access_pattern( in1:SEQUENTIAL,in2:PHYSICAL_CONTIGUOUS , out:SEQUENTIAL )
+#pragma SDS data access_pattern( in1:SEQUENTIAL,in2:SEQUENTIAL , out:SEQUENTIAL )
 void vadd_accel_wide(  const wide_dt *in1, const wide_dt *in2,wide_dt *out,int size );
 
 #pragma SDS data copy(in1[0:size],in2[0:size], out[0:size])
 #pragma SDS data mem_attribute( in1:PHYSICAL_CONTIGUOUS ,in2:PHYSICAL_CONTIGUOUS , out:PHYSICAL_CONTIGUOUS  )
-#pragma SDS data access_pattern( in1:SEQUENTIAL,in2:PHYSICAL_CONTIGUOUS , out:SEQUENTIAL )
+#pragma SDS data access_pattern( in1:SEQUENTIAL,in2:SEQUENTIAL , out:SEQUENTIAL )
 void vadd_accel_normal(  const unsigned int *in1, const unsigned int *in2, unsigned int *out,int size );
 
 #endif

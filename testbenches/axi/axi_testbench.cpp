@@ -1,6 +1,7 @@
 #include "axi_testbench.h"
-
-#define CDC_TESTBENCH
+#include "../../hardware_apps/axi/axi.h"
+#include "../../common/sds_utils.h"
+#include "../../common/utils.h"
 
 
 void test_bit_packing()
@@ -22,7 +23,7 @@ void test_bit_packing()
 	}
 
 
-	for(int i = 0; i < something; i+= NUM_ELEMENTS)
+	for(int i = 0; i < 32; i++)
 	{
 
 		 hw_ctr.start();
@@ -63,3 +64,4 @@ int run_axi_testbench()
 
 	return 0;
 }
+

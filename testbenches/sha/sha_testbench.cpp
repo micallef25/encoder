@@ -4,17 +4,16 @@
 #include<iostream>
 #include "../../hardware_apps/sha/sha.h"
 #include "../../software_apps/sha/sha_sw.h"
-#include "../../full_flow/sds_utils.h"
-
-// for not compiling multiple mains place in a header later
-#define SHA_TESTBENCH
+#include "../../common/sds_utils.h"
+#include "../../common/utils.h"
 
 
 void test_string_size()
 {
-#ifdef __SDSCC__
-	unsigned int* shaout_sw = (unsigned int*)sds_alloc(8 * sizeof(unsigned int));
-	unsigned int* shaout_hw = (unsigned int*)sds_alloc(8 * sizeof(unsigned int));
+
+	unsigned int* shaout_sw = AllocateInt(8 * sizeof(unsigned int));
+	unsigned int* shaout_hw = AllocateInt(8 * sizeof(unsigned int));
+
 	sds_utils::perf_counter hw_ctr;
 	sds_utils::perf_counter sw_ctr;
 	hw_ctr.reset();
@@ -22,27 +21,21 @@ void test_string_size()
 	FILE *fptr = fopen("varysize.csv", "w+");
 	if(fptr == NULL)
 	{
-		return 0;
+		return;
 	}
-#else
-	unsigned int* shaout_sw = (unsigned int*)malloc(8 * sizeof(unsigned int));
-	unsigned int* shaout_hw = (unsigned int*)malloc(8 * sizeof(unsigned int));
-#endif
+
 
 	std::cout << "running varying string SHA tests" << std::endl;
 
 	// run tests
 	for(int i = 1; i < MAX_TEST_SIZE; i++)
 	{
-		#ifdef __SDSCC__
-		unsigned char* buffer = (unsigned char*)sds_alloc( i * sizeof(unsigned char));
-		#else
-		unsigned char* buffer = (unsigned char*)malloc(i * sizeof(unsigned char));
-		#endif
+
+		unsigned char* buffer = Allocate( i * sizeof(unsigned char));
 		if(buffer == NULL)
 		{
 			std::cout << "failed to make memory " << std::endl;
-			exit(0);
+			return;
 		}
 
 		for(int k = 0; k < i; k++)
@@ -50,33 +43,28 @@ void test_string_size()
 			buffer[k] = rand();
 		}
 
-		#ifdef __SDSCC__
 		hw_ctr.start();
-		#endif
 
 		//
 		sha_hw(&buffer[0],&shaout_hw[0],i);
 
-		#ifdef __SDSCC__
-		hw_ctr.stop();
-		#endif
 
-		#ifdef __SDSCC__
+		hw_ctr.stop();
+
+
 		sw_ctr.start();
-		#endif
 
 		//
 		sha_sw(&buffer[0],&shaout_sw[0],i);
 
-		#ifdef __SDSCC__
 		sw_ctr.stop();
-		#endif
+
 
 
 		if(memcmp(shaout_sw,shaout_hw,8) == 0)
 		{
 			std::cout << "Test " << i << " passed!" << std::endl;
-			#ifdef __SDSCC__
+
 			float speedup = (float)sw_ctr.cpu_cycles() / (float)hw_ctr.cpu_cycles();
 			
 			std::cout << "Bytes processed: " << i * sizeof(char) << " Average number of CPU cycles in hardware: " << hw_ctr.cpu_cycles() << std::endl;
@@ -89,69 +77,47 @@ void test_string_size()
 			//
 			hw_ctr.reset();
 			sw_ctr.reset();
-			#endif
 		}
 		else{
 			printf("test failed %d\n",i);
-			#ifdef __SDSCC__
-			sds_free(shaout_sw);
-			sds_free(shaout_hw);
-			fclose(fptr);
-			#else
-			free(shaout_sw);
-			free(shaout_hw);
-			#endif
+
+			Free(buffer);
+
 			break;
 		}
 
-		#ifdef __SDSCC__
-		sds_free(buffer);
-		#else
-		free(buffer);
-		#endif
+		Free(buffer);
 	}
 
-	#ifdef __SDSCC__
-	sds_free(shaout_sw);
-	sds_free(shaout_hw);
+	FreeInt(shaout_sw);
+	FreeInt(shaout_hw);
 	fclose(fptr);
-	#else
-	free(shaout_sw);
-	free(shaout_hw);
-	#endif
 
 }
 
 void test_constant_size()
 {
-#ifdef __SDSCC__
-	unsigned int* shaout_sw = (unsigned int*)sds_alloc(8 * sizeof(unsigned int));
-	unsigned int* shaout_hw = (unsigned int*)sds_alloc(8 * sizeof(unsigned int));
+	
+	unsigned int* shaout_sw = AllocateInt(8 * sizeof(unsigned int));
+	unsigned int* shaout_hw = AllocateInt(8 * sizeof(unsigned int));
+
 	sds_utils::perf_counter hw_ctr;
 	sds_utils::perf_counter sw_ctr;
 	hw_ctr.reset();
 	sw_ctr.reset();
-	FILE *fptr = fopen("constsize.csv", "w+");
+	FILE *fptr = fopen("varysize.csv", "w+");
 	if(fptr == NULL)
 	{
-		return 0;
+		return;
 	}
-#else
-	unsigned int* shaout_sw = (unsigned int*)malloc(8 * sizeof(unsigned int));
-	unsigned int* shaout_hw = (unsigned int*)malloc(8 * sizeof(unsigned int));
-#endif
 
 	std::cout << "running constant string SHA tests" << std::endl;
 
-	#ifdef __SDSCC__
-	unsigned char* buffer = (unsigned char*)sds_alloc( MAX_BUFF_SIZE * sizeof(unsigned char));
-	#else
-	unsigned char* buffer = (unsigned char*)malloc( MAX_BUFF_SIZE * sizeof(unsigned char));
-	#endif
+	unsigned char* buffer = Allocate( MAX_BUFF_SIZE * sizeof(unsigned char));
 	if(buffer == NULL)
 	{
 		std::cout << "failed to make memory " << std::endl;
-		exit(0);
+		return;
 	}
 
 	// run tests
@@ -163,33 +129,24 @@ void test_constant_size()
 			buffer[k] = rand();
 		}
 
-		#ifdef __SDSCC__
 		hw_ctr.start();
-		#endif
 
 		//
 		sha_hw(&buffer[0],&shaout_hw[0],MAX_BUFF_SIZE);
 
-		#ifdef __SDSCC__
 		hw_ctr.stop();
-		#endif
 
-		#ifdef __SDSCC__
 		sw_ctr.start();
-		#endif
 
 		//
 		sha_sw(&buffer[0],&shaout_sw[0],MAX_BUFF_SIZE);
 
-		#ifdef __SDSCC__
 		sw_ctr.stop();
-		#endif
-
 
 		if(memcmp(shaout_sw,shaout_hw,8) == 0)
 		{
 			std::cout << "Test " << i << " passed!" << std::endl;
-			#ifdef __SDSCC__
+
 			float speedup = (float)sw_ctr.cpu_cycles() / (float)hw_ctr.cpu_cycles();
 			
 			std::cout << "Bytes processed: " << MAX_BUFF_SIZE * sizeof(char) << " Average number of CPU cycles in hardware: " << hw_ctr.cpu_cycles() << std::endl;
@@ -202,32 +159,21 @@ void test_constant_size()
 			//
 			hw_ctr.reset();
 			sw_ctr.reset();
-			#endif
 		}
 		else{
 			printf("test failed %d\n",i);
-			#ifdef __SDSCC__
-			sds_free(shaout_sw);
-			sds_free(shaout_hw);
-			fclose(fptr);
-			#else
-			free(shaout_sw);
-			free(shaout_hw);
-			#endif
+
+			Free(buffer);
+
 			break;
 		}
+
+		Free(buffer);
 	}
 
-	#ifdef __SDSCC__
-	sds_free(shaout_sw);
-	sds_free(shaout_hw);
-	sds_free(buffer);
+	FreeInt(shaout_sw);
+	FreeInt(shaout_hw);
 	fclose(fptr);
-	#else
-	free(shaout_sw);
-	free(shaout_hw);
-	free(buffer);
-	#endif
 }
 
 #ifdef __SDSCC__
@@ -251,7 +197,7 @@ void test_pipeline()
 	FILE *fptr = fopen("pipeline.csv", "w+");
 	if(fptr == NULL)
 	{
-		return 0;
+		return;
 	}
 
 	std::cout << "pipelining 4 SHA accelerators..." << std::endl;
@@ -281,19 +227,19 @@ hw_ctr.start();
 		//
 #pragma SDS async(1)
 #pragma SDS resource(1)
-		sha_hw(&buffer[i],&shaout_hw[i],MAX_BUFF_SIZE);
+		sha_hw(buffer[i],shaout_hw[i],MAX_BUFF_SIZE);
 		//
 #pragma SDS async(2)
 #pragma SDS resource(2)
-		sha_hw(&buffer[i+1],&shaout_hw[i+1],MAX_BUFF_SIZE);
+		sha_hw(buffer[i+1],shaout_hw[i+1],MAX_BUFF_SIZE);
 		//
 #pragma SDS async(3)
 #pragma SDS resource(3)
-		sha_hw(&buffer[i+2],&shaout_hw[i+2],MAX_BUFF_SIZE);
+		sha_hw(buffer[i+2],shaout_hw[i+2],MAX_BUFF_SIZE);
 		//
 #pragma SDS async(4)
 #pragma SDS resource(4)
-		sha_hw(&buffer[i+3],&shaout_hw[i+3],MAX_BUFF_SIZE);
+		sha_hw(buffer[i+3],shaout_hw[i+3],MAX_BUFF_SIZE);
 
 	}
 
@@ -314,12 +260,12 @@ hw_ctr.start();
 for(int i = 0; i < 16; i++)
 {
 		//
-		sha_sw(&buffer[i],&shaout_sw[i],MAX_BUFF_SIZE);
+		sha_sw(buffer[i],shaout_sw[i],MAX_BUFF_SIZE);
 }
 
 		sw_ctr.stop();
 
-		std::cout << "Test " << i << " passed!" << std::endl;
+		std::cout << "pipeline test passed!" << std::endl;
 		float speedup = (float)sw_ctr.cpu_cycles() / (float)hw_ctr.cpu_cycles();
 			
 		std::cout << "Bytes processed: " << MAX_BUFF_SIZE * sizeof(char) << " Average number of CPU cycles in hardware: " << hw_ctr.cpu_cycles() << std::endl;
@@ -344,11 +290,8 @@ for(int i = 0; i < 16; i++)
 }
 #endif
 
-#ifdef SHA_TESTBENCH
-int main()
-#else
-int test_sha()
-#endif
+
+int run_sha_testbench()
 {
 
 	//
