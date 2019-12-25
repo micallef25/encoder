@@ -5,4 +5,8 @@
 * add macro defines for building test benches 
 */
 
+#define TEST_SHA_PIPELINED
+#define UNIT_TEST_SHA
+
+
 #endif

@@ -1,11 +1,11 @@
-// #ifndef _CDC_H
-// #define _CDC_H
+#ifndef _CDC_SHA_H
+#define _CDC_SHA_H
 
-// // capture metadat for comparison of hw to sw
-// typedef struct cdc_test_t
-// {
-// 	int chunks;
-// 	int avg_chunksize;
-// }cdc_test_t;
+int run_cdc_to_sha_testbench();
 
-// #endif
+typedef struct cdc_sha_struct{
+	unsigned int key[8];
+	unsigned int raw_data[8196];
+}cdc_sha_t;
+
+#endif

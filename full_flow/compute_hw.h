@@ -1,5 +1,5 @@
-// #ifndef _COMPUTE_H_
-// #define _COMPUTE_H_
+ #ifndef _COMPUTE_H_
+ #define _COMPUTE_H_
 
 // #define EOF_BIT 1 << 10
 // #define NUM_INSTANCES 2
@@ -15,9 +15,9 @@
 // // perhaps over riding the compiler chosen DMA channel is in your best interest?
 // // look here: https://www.xilinx.com/html_docs/xilinx2019_1/sdsoc_doc/sds-pragmas-nmc1504034362475.html#dzz1504034363418
 // // we looked at data motion reports in homework 6 what did you observe or notice?
-// #pragma SDS data copy(input[0:length], output[0:length+2])
-// #pragma SDS data mem_attribute( input:PHYSICAL_CONTIGUOUS , output:PHYSICAL_CONTIGUOUS  )
-// #pragma SDS data access_pattern( input:SEQUENTIAL, output:SEQUENTIAL )
-// void compute_hw( const unsigned char input[MAX_CHUNKSIZE], unsigned char output[MAX_CHUNKSIZE],unsigned int length);
+ #pragma SDS data copy(input[0:length], output[0:length])
+ #pragma SDS data mem_attribute( input:PHYSICAL_CONTIGUOUS , output:PHYSICAL_CONTIGUOUS  )
+ #pragma SDS data access_pattern( input:SEQUENTIAL, output:SEQUENTIAL )
+ void compute_hw( const unsigned char input[4096], unsigned int output[4096],unsigned int length);
 
-// #endif
+ #endif

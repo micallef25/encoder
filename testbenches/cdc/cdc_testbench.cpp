@@ -10,6 +10,7 @@
 #include "../../common/utils.h"
 
 #define VMLINUZ "C:/school/Penn/SOC/personal/src/src/testfiles/vmlinuz.tar"
+#define PRINCE "C:/school/Penn/SOC/personal/src/src/testfiles/prince.txt"
 
 void test_cdc( const char* file )
 {
@@ -36,6 +37,14 @@ void test_cdc( const char* file )
 		fclose(fp);
 		return;
 	}	
+	//
+	unsigned char* outbuff = Allocate((sizeof(unsigned char) * file_size ));
+	if(outbuff == NULL)
+	{
+		perror("not enough space");
+		fclose(fp);
+		return;
+	}
 	
 	//	
 	int bytes_read = fread(&buff[0],sizeof(unsigned char),file_size,fp);
@@ -50,7 +59,7 @@ void test_cdc( const char* file )
     rks->patternSearch(buff,file_size,test_ptr);
 
     // run sw version
-    cdc_top(buff,file_size,hw_test_ptr);
+    cdc_top(buff,outbuff,file_size,hw_test_ptr);
 
     if(hw_test_ptr->avg_chunksize != test_ptr->avg_chunksize)
     {
@@ -61,9 +70,11 @@ void test_cdc( const char* file )
     	std::cout << "chunks found differ " << std::endl;
     }
 
-    free(buff);
+    Free(buff);
+    Free(outbuff);
     delete rks;
     delete test_ptr;
+    delete hw_test_ptr;
     return;
 }
 
@@ -85,7 +96,8 @@ void test_cdc( const char* file )
 int run_cdc_testbench()
 {
 
-	test_cdc(VMLINUZ);
+//	test_cdc(VMLINUZ);
+	test_cdc(PRINCE);
 	// test_cdc_random();
 	// test_cdc_repeition();
 	return 0;
