@@ -39,29 +39,29 @@
 
 
 // write back stage
-void sha_out(unsigned int output[4*8], hls::stream<uint33_t> &out_stream)
+void sha_out(unsigned int output[8*30000], hls::stream<uint33_t> &out_stream)
 {
 	uint33_t done = 0;
-	uint8_t k = 0;
+	unsigned int k = 0;
 	while(!done){
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
-	for(int i=0; i < 8;i++)
+	for(unsigned int i=0; i < 8;i++)
 	{
 		output[i+(k*8)] = out_stream.read();
 	}
 	done = out_stream.read();
 	k++;
-	#ifdef DEBUG
-	std::cout << done <<std::endl;
-	#endif
+	//#ifdef DEBUG
+	//std::cout << done <<std::endl;
+	//#endif
 	}
 }
 
 
 // helps for testing out streaming without any other features built 
-void hw_interface(unsigned char input[MAX_BUFF_SIZE],hls::stream<uint10_t> &interface_stream_out,int length)
+void hw_interface(unsigned char input[MAX_BUFF_SIZE],hls::stream<uint10_t> &interface_stream_out,unsigned int length)
 {
-	int i = 0;
+	unsigned int i = 0;
 	for(i = 0; i < length-1;i++)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=3 max=3
@@ -87,6 +87,7 @@ void producer(hls::stream<unsigned short> &producer_stream_in, hls::stream<uint3
 	unsigned int msg_ctr = 0;
 	unsigned long long digest_length = 0;
 	unsigned long long bread= 0;
+	unsigned int chunks = 0;
 
 	// we can pump in messages fine.
 	// change the granularity maybe we can read in 16 bits instead of 8
@@ -106,9 +107,12 @@ void producer(hls::stream<unsigned short> &producer_stream_in, hls::stream<uint3
 
 #ifdef DEBUG
 // std::cout << (char)strm_msg;
-if(done != 0)
+if(done != 0){
+	chunks++;
+
 // printf("-----------\n");
-printf("done bit found %d\n",digest_length);
+printf("done bit found %d : %d\n",digest_length,chunks);
+}
 #endif
 
 		// clear bit
@@ -154,6 +158,10 @@ printf("end bit found %d\n",digest_length);
 		}
 	}
 
+	#ifdef DEBUG
+	printf("msg ctr: %d \n",(unsigned int)msg_ctr);
+	#endif
+
 	// finalize
 	message |= (0x80 << shift[ctr]);
 	ctr++;
@@ -172,9 +180,9 @@ printf("end bit found %d\n",digest_length);
 		message = 0;
 	}
 
-	#ifdef DEBUG
-	printf("msg ctr: %d \n",(unsigned int)msg_ctr);
-	#endif
+	// #ifdef DEBUG
+	// printf("msg ctr: %d \n",(unsigned int)msg_ctr);
+	// #endif
 
 	// optimize this if else
 	if(msg_ctr < 56){
@@ -413,10 +421,10 @@ while(!end){
 			// extract the bit if it exists
 			done = strm_msg & DONE_BIT_33;
 
-			#ifdef DEBUG
-			if(done != 0)
-			printf("done %d tran=%llu \n",i,(unsigned long long)done);
-			#endif
+			//#ifdef DEBUG
+			//if(done != 0)
+			//printf("done %d tran=%llu \n",i,(unsigned long long)done);
+			//#endif
 
 			// clear bit
 			strm_msg &= ~DONE_BIT_33;
@@ -459,9 +467,9 @@ while(!end){
 		// reset state array here probably
 		if(done || end)
 		{
-	#ifdef DEBUG
-		printf("writing output %d \n",transforms);
-	#endif
+	//#ifdef DEBUG
+	//	printf("writing output %d \n",transforms);
+	//#endif
 			transform_strm_out.write(state[0] += a);
 			transform_strm_out.write(state[1] += b);
 			transform_strm_out.write(state[2] += c);
@@ -545,7 +553,7 @@ void sha_hw(unsigned char input[MAX_BUFF_SIZE],unsigned int output[8], int lengt
 /*
 * given a string produce a sha256 bit hash
 */
-void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[8*4]){
+void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[8*30000]){
 
 	unsigned int state[8];
 	#pragma HLS array_partition variable=state complete dim=1

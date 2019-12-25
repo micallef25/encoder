@@ -50,7 +50,7 @@ void output(unsigned char output[4096],hls::stream<unsigned short> &stream)
 // helps for testing out streaming without any other features built
 void cdc_hw_interface(const unsigned char input[4096],hls::stream<unsigned short> &interface_stream_out,unsigned int length)
 {
-	int i = 0;
+	unsigned int i = 0;
 	for(i = 0; i < length-1;i++)
 	{
 #pragma HLS LOOP_TRIPCOUNT min=64 max=64
@@ -86,7 +86,7 @@ void create_table(uint64_t polynomial_lookup_buf[256],uint64_t prime_table[256])
 * might be able to exploit 122 bit packing rw here depending on speed up
 */
 //void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned short> &stream_out,cdc_test_t* cdc_test_check)
-void patternSearch(hls::stream<unsigned short> &stream_in,unsigned char raw[4][8196],hls::stream<unsigned short> &stream_out)
+void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned short> &stream_out)
 {
     // assign the incoming text to our file block
 	// window is 16 bits to account for the done bit
@@ -97,7 +97,7 @@ void patternSearch(hls::stream<unsigned short> &stream_in,unsigned char raw[4][8
     uint64_t prime_table[256];
     uint64_t textHash = 0;
     uint64_t chunks = 0;
-    int file_length = RAB_POLYNOMIAL_WIN_SIZE;
+    unsigned int file_length = RAB_POLYNOMIAL_WIN_SIZE;
 
 #pragma HLS array_partition variable=polynomial_lookup_buf complete dim=1
 #pragma HLS array_partition variable=prime_table complete dim=1

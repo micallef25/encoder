@@ -79,24 +79,18 @@ int Rabin::patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_
         // add the char to our chunk
         chunk += old_char;
 
-        //
-        evict++;
-
         // calculate roll hash
         textHash *= PRIME;
         textHash += new_char;
         textHash -= power;
         length++;
 
-        // adjust our moving window
-        if (evict == RAB_POLYNOMIAL_WIN_SIZE)
-            evict = 0;
 
         // obtain our finger print
         uint64_t finger = textHash ^ FP_POLY;
 
         // if we have a fingerprint that is larger than our min chunk or we have exceesed length 
-        if ((((finger & RAB_BLK_MASK) == 0) || (length == MAX_CHUNK_SIZE)) && (length > MIN_CHUNK_SIZE))
+        if ((((finger & RAB_BLK_MASK) == 0) || (chunk.size() == (MAX_CHUNK_SIZE-RAB_POLYNOMIAL_WIN_SIZE) )) && (chunk.size() > MIN_CHUNK_SIZE-RAB_POLYNOMIAL_WIN_SIZE))
         {
         	length = 0;
 

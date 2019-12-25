@@ -11,6 +11,7 @@
 #include "../../common/utils.h"
 #include "../../full_flow/compute_hw.h"
 
+#define MINI "C:/school/Penn/SOC/personal/src/src/testfiles/mini.tar"
 #define VMLINUZ "C:/school/Penn/SOC/personal/src/src/testfiles/vmlinuz.tar"
 #define PRINCE "C:/school/Penn/SOC/personal/src/src/testfiles/prince.txt"
 
@@ -28,7 +29,7 @@ void test_cdc_sha( const char* file )
 		
 	//
 	fseek(fp, 0, SEEK_END); // seek to end of file
-	int file_size = ftell(fp); // get current file pointer
+	unsigned int file_size = ftell(fp); // get current file pointer
 	fseek(fp, 0, SEEK_SET); // seek back to beginning of file
 
 	//
@@ -49,14 +50,16 @@ void test_cdc_sha( const char* file )
 	}
 	
 	//
-	int bytes_read = fread(&buff[0],sizeof(unsigned char),file_size,fp);
-	printf("bytes_read %d\n",bytes_read);
+	unsigned int bytes_read = fread(&buff[0],sizeof(unsigned char),file_size,fp);
+	printf("bytes_read %llu\n",bytes_read);
 
 	Rabin* rks = new Rabin;
 	cdc_test_t* test_ptr = new cdc_test_t;
 	cdc_test_t* hw_test_ptr = new cdc_test_t;
 
 	unsigned int key = ((file_size / 2048)+1);
+	std::cout << "filesize " << file_size <<" key " << key <<std::endl;
+
 	unsigned int* hwkeys = AllocateInt(sizeof(unsigned int*) * key*8);
 
 	unsigned int* swkeys = AllocateInt(sizeof(unsigned int*) * key*8);
@@ -70,11 +73,11 @@ void test_cdc_sha( const char* file )
    for(int k = 0; k < rks->chunks.size(); k++)
    {
    		std::string data = rks->chunks.at(k);
-   		std::cout << "sw chunk length end" << data.length() << std::endl;
+   		std::cout << "sw chunk length end" << data.length() << " k " << k << std::endl;
    		sum+= data.length();
    		sha_sw( (unsigned char*)data.c_str(),&swkeys[k*8],data.length());
    }
-   unsigned char raw[4][8196];
+   //unsigned char raw[4][8196];
    std::cout << "sw read " << sum <<std::endl;
 
    //std::cout << rks->chunks.at(0) << std::endl;
@@ -87,7 +90,7 @@ void test_cdc_sha( const char* file )
 //   }
 
     //
-    compute_hw(buff,raw,hwkeys,file_size);
+    compute_hw(buff,hwkeys,file_size);
 
     //compare raw data and compare the keys
     if(memcmp(swkeys,hwkeys,sizeof(int)*8*rks->chunks.size()) == 0)
@@ -131,8 +134,8 @@ void test_cdc_sha( const char* file )
 int run_cdc_to_sha_testbench()
 {
 
-//	test_cdc(VMLINUZ);
-	test_cdc_sha(PRINCE);
+	test_cdc_sha(VMLINUZ);
+//	test_cdc_sha(PRINCE);
 	// test_cdc_random();
 	// test_cdc_repeition();
 	return 0;
