@@ -109,6 +109,8 @@ void sha256_final(SHA256_CTX *ctx, WORD_SHA hash[])
 
 	i = ctx->datalen;
 
+	printf("sw msg ctr: %d \n",(unsigned int)ctx->datalen);
+
 	// Pad whatever data is left in the buffer.
 	if (ctx->datalen < 56) {
 		ctx->data[i++] = 0x80;

@@ -16,6 +16,8 @@ unsigned char * Allocate(int Size);
 void Free(unsigned char * Frame);
 unsigned int * AllocateInt(int Size);
 void FreeInt(unsigned int * Frame);
+unsigned int** AllocateArr(int Size);
+void FreeArr(unsigned int** Frame);
 void Store_data(unsigned char * Data, unsigned int Size);
 unsigned int Load_data(unsigned char * Data);
 

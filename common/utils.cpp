@@ -66,6 +66,26 @@ void FreeInt(unsigned int * Frame) {
 #endif
 }
 
+unsigned int** AllocateArr(int Size) {
+	unsigned int** Frame = (unsigned int**)
+#ifdef __SDSCC__
+	sds_alloc(Size);
+#else
+	malloc(Size);
+#endif
+	Check_error(Frame == NULL, "Could not allocate memory.\n");
+
+	return Frame;
+}
+
+void FreeArr(unsigned int** Frame) {
+#ifdef __SDSCC__
+	sds_free(Frame);
+#else
+	free(Frame);
+#endif
+}
+
 unsigned int Load_data(unsigned char * Data) {
 
 	FILE * File = fopen(FILEIN, "rb");

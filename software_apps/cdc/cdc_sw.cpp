@@ -7,6 +7,8 @@
 #include <cmath>
 #include <vector>
 #include "cdc_sw.h"
+#include <queue> 
+
 
 #define FP_POLY 0xbfe6b8a5bf378d83ULL
 #define RAB_POLYNOMIAL_CONST 153191
@@ -44,13 +46,13 @@ int Rabin::patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_
 {
     // assign the incoming text to our file block
     uint8_t window[RAB_POLYNOMIAL_WIN_SIZE];
-
+    std::queue<uint8_t> fifo;
     uint64_t textHash = 0;
 
     // place first window into the chunk
     for (int j = 0; j < RAB_POLYNOMIAL_WIN_SIZE; j++) {
         textHash += buff[j] * polynomial_lookup_buf[(RAB_POLYNOMIAL_WIN_SIZE - 1) - j];
-        window[j] = buff[j];
+        fifo.push(buff[j]);
     }
     
     uint8_t evict = 0;
@@ -65,13 +67,14 @@ int Rabin::patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_
     {
     	// get incoming and outgoing byte
         new_char = buff[i];
-        old_char = window[evict];
+        old_char = fifo.front();
+        fifo.pop();
 
         // look in the prime table for value to take away from the hash
         power = prime_table[old_char];
 
         // store our new char
-        window[evict] = new_char;
+        fifo.push(new_char);
 
         // add the char to our chunk
         chunk += old_char;
@@ -97,27 +100,53 @@ int Rabin::patternSearch(unsigned char* buff, unsigned int file_length,cdc_test_
         {
         	length = 0;
 
+            //std::cout << "chunk size1 " << chunk.size() << std::endl;
+            // int j = i;
         	// flush the rest of our window
-            for (int j = i; j < RAB_POLYNOMIAL_WIN_SIZE; j++)
-                chunk += buff[j];
+            for (int j=0; j < RAB_POLYNOMIAL_WIN_SIZE; j++){
+                i++;
+                new_char = buff[i];
+                old_char = fifo.front();
+                fifo.pop();
 
+                // look in the prime table for value to take away from the hash
+                power = prime_table[old_char];
+
+                // store our new char
+                fifo.push(new_char);
+
+                // add the char to our chunk
+                chunk += old_char;
+
+                //
+                evict++;
+
+                // calculate roll hash
+                textHash *= PRIME;
+                textHash += new_char;
+                textHash -= power;
+            }
+
+
+            // // init our new window
+            // for (int k = 0; k < RAB_POLYNOMIAL_WIN_SIZE; k++) {
+            //     textHash += buff[i] * polynomial_lookup_buf[(RAB_POLYNOMIAL_WIN_SIZE - 1) - k];
+            //     fifo.push(buff[i]);
+            //     i++;
+            // }
+            //i+=RAB_POLYNOMIAL_WIN_SIZE;
             // store the chunk and then clear the chunk
-            //std::cout << "chunk size " << chunk.size() << std::endl;
+            //std::cout << "chunk size2 " << chunk.size() << std::endl;
             chunks.push_back(chunk);
             chunk.clear();
         }// found chunk
     }// for length
 
     // flush our window
-    for (int j = evict; j < RAB_POLYNOMIAL_WIN_SIZE; j++)
+    for (int j = 0; j < RAB_POLYNOMIAL_WIN_SIZE; j++)
     {
-        chunk+= window[j];
-    }
-
-    // flush our window
-    for (int j = 0; j < evict; j++)
-    {   
-        chunk+= window[j];
+    	chunk += fifo.front();
+    	fifo.pop();
     }
 
     // save last chunk

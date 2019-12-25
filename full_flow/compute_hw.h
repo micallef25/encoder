@@ -18,6 +18,6 @@
  #pragma SDS data copy(input[0:length], output[0:length])
  #pragma SDS data mem_attribute( input:PHYSICAL_CONTIGUOUS , output:PHYSICAL_CONTIGUOUS  )
  #pragma SDS data access_pattern( input:SEQUENTIAL, output:SEQUENTIAL )
- void compute_hw( const unsigned char input[4096], unsigned int output[4096],unsigned int length);
+ void compute_hw( const unsigned char input[4096],unsigned char raw[4][8196], unsigned int output[8*4],unsigned int length);
 
  #endif

@@ -4,7 +4,7 @@
 #include "../hardware_apps/sha/sha.h"
 
  // our top level function DMA is streamed in and out see header for declaration
- void compute_hw( const unsigned char input[4096], unsigned int output[4096],unsigned int length)
+ void compute_hw( const unsigned char input[4096],unsigned char raw[4][8196], unsigned int output[8*4],unsigned int length)
  {
  	static hls::stream<unsigned short> data_stream;
  	static hls::stream<unsigned short> stream_out;
@@ -17,7 +17,7 @@
  #pragma HLS DATAFLOW
  	// hw interface is meant for possibly sending 128bits
  	cdc_hw_interface(input,data_stream,length);
- 	patternSearch(data_stream,stream_out);
+ 	patternSearch(data_stream,raw,stream_out);
  	sha_hw_stream(stream_out,output);
 
  }

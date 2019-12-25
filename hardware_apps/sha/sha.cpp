@@ -39,16 +39,18 @@
 
 
 // write back stage
-void sha_out(unsigned int output[8], hls::stream<uint33_t> &out_stream)
+void sha_out(unsigned int output[4*8], hls::stream<uint33_t> &out_stream)
 {
 	uint33_t done = 0;
+	uint8_t k = 0;
 	while(!done){
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
 	for(int i=0; i < 8;i++)
 	{
-		output[i] = out_stream.read();
+		output[i+(k*8)] = out_stream.read();
 	}
 	done = out_stream.read();
+	k++;
 	#ifdef DEBUG
 	std::cout << done <<std::endl;
 	#endif
@@ -84,6 +86,7 @@ void producer(hls::stream<unsigned short> &producer_stream_in, hls::stream<uint3
 	unsigned int ctr = 0;
 	unsigned int msg_ctr = 0;
 	unsigned long long digest_length = 0;
+	unsigned long long bread= 0;
 
 	// we can pump in messages fine.
 	// change the granularity maybe we can read in 16 bits instead of 8
@@ -95,17 +98,18 @@ void producer(hls::stream<unsigned short> &producer_stream_in, hls::stream<uint3
 #pragma HLS pipeline II=1
 
 		strm_msg = producer_stream_in.read();
-
-#ifdef DEBUG
-		if(strm_msg > 255)
-		{
-			std::cout << "bit setsha " << digest_length <<std::endl;
-		}
-#endif
+		digest_length++;
+		bread++;
 
 		// extract the bit if it exists
 		done = strm_msg & DONE_BIT_9;
 
+#ifdef DEBUG
+// std::cout << (char)strm_msg;
+if(done != 0)
+// printf("-----------\n");
+printf("done bit found %d\n",digest_length);
+#endif
 
 		// clear bit
 		strm_msg &= ~DONE_BIT_9;
@@ -127,7 +131,7 @@ printf("end bit found %d\n",digest_length);
 		// inc
 		ctr++;
 		msg_ctr++;
-		digest_length++;
+		//digest_length++;
 
 		// write our 32 bit word
 		if(ctr == 4)
@@ -256,11 +260,14 @@ printf("end bit found %d\n",digest_length);
 	msg_ctr = 0;
 	message = 0;
 	ctr = 0;
+	#ifdef DEBUG
+	printf("-----------\n");
+	#endif
 }
 
-//	 #ifdef DEBUG
-//	 printf("msg: %#08x \n",(unsigned int)message);
-//	 #endif
+	 #ifdef DEBUG
+	 printf("msg: %d \n",bread);
+	 #endif
 
 }
 
@@ -298,12 +305,12 @@ while(!done && !end)
 		// clear the bit so it does not propagate early
 		strm_msg &= ~DONE_BIT_34;
 
-		#ifdef DEBUG
-		if(done != 0 )
-		printf("done %d =%llu\n",i,(unsigned long long)done);
-		if(end != 0 )
-		printf("end %d =%llu\n",i,(unsigned long long)end);
-		#endif
+//		#ifdef DEBUG
+//		if(done != 0 )
+//		printf("done %d =%llu\n",i,(unsigned long long)done);
+//		if(end != 0 )
+//		printf("end %d =%llu\n",i,(unsigned long long)end);
+//		#endif
 
 		// write the message into a temp buffer for the second loop
 		// stream the message to the update loop
@@ -391,6 +398,7 @@ while(!end){
 		g = state[6];
 		h = state[7];
 
+
 		//
 		// our main bottle neck is this loop
 		// coming in at about 3456 cycles per 64 bytes
@@ -405,10 +413,10 @@ while(!end){
 			// extract the bit if it exists
 			done = strm_msg & DONE_BIT_33;
 
-	//		#ifdef DEBUG
-	//		if(done != 0)
-	//		printf("done %d tran=%llu \n",i,(unsigned long long)done);
-	//		#endif
+			#ifdef DEBUG
+			if(done != 0)
+			printf("done %d tran=%llu \n",i,(unsigned long long)done);
+			#endif
 
 			// clear bit
 			strm_msg &= ~DONE_BIT_33;
@@ -463,7 +471,16 @@ while(!end){
 			transform_strm_out.write(state[6] += g);
 			transform_strm_out.write(state[7] += h);
 			transform_strm_out.write(end);
+			state[0] = 0x6a09e667;
+			state[1] = 0xbb67ae85;
+			state[2] = 0x3c6ef372;
+			state[3] = 0xa54ff53a;
+			state[4] = 0x510e527f;
+			state[5] = 0x9b05688c;
+			state[6] = 0x1f83d9ab;
+			state[7] = 0x5be0cd19;
 			done = 0;
+			transforms = 0;
 		}
 		else
 		{
@@ -475,7 +492,7 @@ while(!end){
 			state[5] += f;
 			state[6] += g;
 			state[7] += h;
-	//		transforms++;
+			transforms++;
 		}
 	}// while
 }
@@ -521,14 +538,14 @@ void sha_hw(unsigned char input[MAX_BUFF_SIZE],unsigned int output[8], int lengt
 	producer(data_stream,sha_stream);
 	message_prepare(sha_stream,message_stream);
 	transform(message_stream,&state[0],out_state);
-	sha_out(&output[0],out_state);
+	//sha_out(&output[0],out_state);
 }
 
 
 /*
 * given a string produce a sha256 bit hash
 */
-void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[8]){
+void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[8*4]){
 
 	unsigned int state[8];
 	#pragma HLS array_partition variable=state complete dim=1

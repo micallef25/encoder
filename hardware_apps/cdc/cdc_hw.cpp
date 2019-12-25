@@ -86,21 +86,19 @@ void create_table(uint64_t polynomial_lookup_buf[256],uint64_t prime_table[256])
 * might be able to exploit 122 bit packing rw here depending on speed up
 */
 //void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned short> &stream_out,cdc_test_t* cdc_test_check)
-void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned short> &stream_out)
+void patternSearch(hls::stream<unsigned short> &stream_in,unsigned char raw[4][8196],hls::stream<unsigned short> &stream_out)
 {
     // assign the incoming text to our file block
 	// window is 16 bits to account for the done bit
     hls::stream<unsigned short> window;
-    #pragma HLS STREAM variable=window depth=16
+#pragma HLS STREAM variable=window depth=16
 
-    // uint16_t window[RAB_POLYNOMIAL_WIN_SIZE];
     uint64_t polynomial_lookup_buf[256];
     uint64_t prime_table[256];
     uint64_t textHash = 0;
-    //uint8_t chunk_buff[MAX_CHUNK_SIZE];
     uint64_t chunks = 0;
-    int file_length = 0;
-//#pragma HLS array_partition variable=window complete dim=1
+    int file_length = RAB_POLYNOMIAL_WIN_SIZE;
+
 #pragma HLS array_partition variable=polynomial_lookup_buf complete dim=1
 #pragma HLS array_partition variable=prime_table complete dim=1
 
@@ -112,12 +110,11 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 #pragma HLS pipeline II=1
     	unsigned short in = stream_in.read();
         textHash += (unsigned char)in * polynomial_lookup_buf[(RAB_POLYNOMIAL_WIN_SIZE - 1) - j];
-        // window[j] = (unsigned char)in;
-        window.write(in);
+        window.write((unsigned char)in);
+        //std::cout << (char)in;
     }
     
-    uint8_t evict = 0;
-    uint8_t read = 0;
+
     uint16_t new_char = 0;
     uint16_t old_char = 0;
     uint64_t power = 0;
@@ -127,14 +124,16 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
     unsigned short done = 0;
 
     // iterate through entire length
-//    hash:for (int i = RAB_POLYNOMIAL_WIN_SIZE; i < file_length; i++)
     hash:while(!done)
     {
 #pragma HLS LOOP_TRIPCOUNT min=64 max=64
 #pragma HLS pipeline II=1
         // get incoming and outgoing byte
         new_char = stream_in.read();
+        file_length++;
         old_char = window.read();
+        //std::cout << (char)new_char;
+        //raw[chunks][length] = new_char;
         // old_char = window[read];
 
 #ifdef DEBUG
@@ -163,42 +162,28 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 
         length++;
 
-        file_length++;
-
         // obtain our finger print
         uint64_t finger = textHash ^ FP_POLY;
 
         // if we have a fingerprint that is larger than our min chunk or we have exceesed length 
         if ((((finger & RAB_BLK_MASK) == 0) || (length == MAX_CHUNK_SIZE)) && (length > MIN_CHUNK_SIZE))
         {
+
 #ifdef DEBUG_CDC
-            std::cout << "chunk size " << length << std::endl;
+            //std::cout << std::endl << "-----" << std::endl<< "chunk size " << length << std::endl;
             chunks++;
 #endif
             length = 0;
             strm_bit = DONE_BIT_9;
-            // store our new char append the chunk bit
-            // window[evict] = new_char | DONE_BIT_9 | done;
+
         }// found chunk
         else
         {
         	strm_bit = 0;
-        	// window[evict] = new_char | done;
         }
 
         // store our new char append the chunk bit
-       // window[evict] = new_char | strm_bit | done;
        window.write(new_char | strm_bit | done);
-
-
-//        evict = (evict == RAB_POLYNOMIAL_WIN_SIZE) ? 0 : evict+1;
-        //
-        // evict++;
-
-
-        // // adjust our moving window
-        // if (evict == RAB_POLYNOMIAL_WIN_SIZE)
-        //     evict = 0;
 
     }// for length
 
@@ -206,14 +191,15 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
     // flush our window
     flush2:for(int j = 0; j < RAB_POLYNOMIAL_WIN_SIZE; j++)
     {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=1
 #pragma HLS pipeline II=1
     	stream_out.write(window.read());
+        length++;
     }
 
     // account last chunk
-    //chunks++;
 #ifdef DEBUG_CDC
+    chunks++;
+    //std::cout << "rem " << length <<std::endl;
     std::cout << "hw chunks found " << chunks << std::endl;
     std::cout << "hw average chunk size " << file_length / chunks << std::endl;
 #endif
@@ -234,6 +220,6 @@ void cdc_top(unsigned char buff[4096],unsigned char outbuff[4096], unsigned int 
 	// http://www.iwar.org.uk/comsec/resources/cipher/sha256-384-512.pdf
 #pragma HLS DATAFLOW
 	cdc_hw_interface(buff,stream,file_length);
-	patternSearch(stream,stream_out);
+	//patternSearch(stream,stream_out);
 	output(outbuff,stream_out);
 }
