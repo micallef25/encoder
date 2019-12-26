@@ -7,7 +7,7 @@
 #include "sha.h"
 #include <ap_int.h>
 
- #define DEBUG
+// #define DEBUG
 
 
 // #define DONE_BIT_9 (1 << 8)
@@ -109,8 +109,6 @@ void producer(hls::stream<unsigned short> &producer_stream_in, hls::stream<uint3
 // std::cout << (char)strm_msg;
 if(done != 0){
 	chunks++;
-
-// printf("-----------\n");
 printf("done bit found %d : %d\n",digest_length,chunks);
 }
 #endif

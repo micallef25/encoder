@@ -19,7 +19,7 @@
 #define DONE_BIT_9 (0x100)
 #define DONE_BIT_10 (0x200)
 
-#define DEBUG_CDC
+// #define DEBUG_CDC
 
 // helps for testing out streaming without any other features built
 void output(unsigned char output[4096],hls::stream<unsigned short> &stream)
@@ -90,14 +90,26 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 {
     // assign the incoming text to our file block
 	// window is 16 bits to account for the done bit
-    hls::stream<unsigned short> window;
-#pragma HLS STREAM variable=window depth=16
+//     hls::stream<unsigned short> window;
+// #pragma HLS STREAM variable=window depth=16
+    uint16_t window[RAB_POLYNOMIAL_WIN_SIZE];
+#pragma HLS array_partition variable=window complete dim=1
+    uint8_t read=0;
+    uint8_t write=0;
 
     uint64_t polynomial_lookup_buf[256];
     uint64_t prime_table[256];
     uint64_t textHash = 0;
+    uint16_t new_char = 0;
+    uint16_t old_char = 0;
+    uint64_t power = 0;
+    uint16_t length = RAB_POLYNOMIAL_WIN_SIZE;
+    unsigned short done = 0;
+
+#ifdef DEBUG_CDC
     uint64_t chunks = 0;
     unsigned int file_length = RAB_POLYNOMIAL_WIN_SIZE;
+#endif
 
 #pragma HLS array_partition variable=polynomial_lookup_buf complete dim=1
 #pragma HLS array_partition variable=prime_table complete dim=1
@@ -110,18 +122,12 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 #pragma HLS pipeline II=1
     	unsigned short in = stream_in.read();
         textHash += (unsigned char)in * polynomial_lookup_buf[(RAB_POLYNOMIAL_WIN_SIZE - 1) - j];
-        window.write((unsigned char)in);
-        //std::cout << (char)in;
+        // window.write((unsigned char)in);
+        window[write] = (unsigned char)in;
+        write = (write == RAB_POLYNOMIAL_WIN_SIZE-1) ? 0 : write+1;
+
     }
     
-
-    uint16_t new_char = 0;
-    uint16_t old_char = 0;
-    uint64_t power = 0;
-    unsigned short strm_bit = 0;
-
-    uint16_t length = RAB_POLYNOMIAL_WIN_SIZE;
-    unsigned short done = 0;
 
     // iterate through entire length
     hash:while(!done)
@@ -130,17 +136,18 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 #pragma HLS pipeline II=1
         // get incoming and outgoing byte
         new_char = stream_in.read();
-        file_length++;
-        old_char = window.read();
-        //std::cout << (char)new_char;
-        //raw[chunks][length] = new_char;
-        // old_char = window[read];
+        // old_char = window.read();
+        
+        old_char = window[read];
+        read = (read == RAB_POLYNOMIAL_WIN_SIZE-1) ? 0 : read+1;
 
-#ifdef DEBUG
+
+#ifdef DEBUG_CDC
         if(old_char > 255)
         {
         	std::cout << "bit set " << length <<std::endl;
         }
+        file_length++;
 #endif
 
 
@@ -174,16 +181,16 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
             chunks++;
 #endif
             length = 0;
-            strm_bit = DONE_BIT_9;
-
+            window[write] = (new_char | DONE_BIT_9 | done);
         }// found chunk
         else
         {
-        	strm_bit = 0;
+        	window[write] = (new_char | done);
         }
 
         // store our new char append the chunk bit
-       window.write(new_char | strm_bit | done);
+       // window.write(new_char | strm_bit | done);
+        write = (write == RAB_POLYNOMIAL_WIN_SIZE-1) ? 0 : write+1;
 
     }// for length
 
@@ -192,7 +199,8 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
     flush2:for(int j = 0; j < RAB_POLYNOMIAL_WIN_SIZE; j++)
     {
 #pragma HLS pipeline II=1
-    	stream_out.write(window.read());
+    	stream_out.write(window[read]);
+        read = (read == RAB_POLYNOMIAL_WIN_SIZE-1) ? 0 : read+1;
         length++;
     }
 
@@ -202,9 +210,9 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
     //std::cout << "rem " << length <<std::endl;
     std::cout << "hw chunks found " << chunks << std::endl;
     std::cout << "hw average chunk size " << file_length / chunks << std::endl;
-#endif
     //cdc_test_check->avg_chunksize =  length / chunks;
     //cdc_test_check->chunks = chunks;
+#endif
 }
 
 void cdc_top(unsigned char buff[4096],unsigned char outbuff[4096], unsigned int file_length,cdc_test_t* cdc_test_check)

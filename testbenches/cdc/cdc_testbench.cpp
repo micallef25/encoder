@@ -12,6 +12,8 @@
 #define VMLINUZ "C:/school/Penn/SOC/personal/src/src/testfiles/vmlinuz.tar"
 #define PRINCE "C:/school/Penn/SOC/personal/src/src/testfiles/prince.txt"
 
+#ifdef BUILD_CDC_BENCH
+
 void test_cdc( const char* file )
 {
     //
@@ -91,7 +93,13 @@ void test_cdc( const char* file )
 //  // see performance 
 // }
 
+#else
+void test_cdc( const char* file )
+{
+	return;
+}
 
+#endif
 
 int run_cdc_testbench()
 {

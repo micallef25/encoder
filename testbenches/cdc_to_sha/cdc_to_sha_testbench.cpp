@@ -80,14 +80,6 @@ void test_cdc_sha( const char* file )
    //unsigned char raw[4][8196];
    std::cout << "sw read " << sum <<std::endl;
 
-   //std::cout << rks->chunks.at(0) << std::endl;
-   // std::cout << "---" <<std::endl;
-   // std::cout << rks->chunks.at(1) << std::endl;
-   // std::cout << "---" <<std::endl;
-//   for(int w = 0; w < 2844; w++)
-//   {
-//	   std::cout << raw[1][w] <<std::endl;
-//   }
 
     //
     compute_hw(buff,hwkeys,file_size);
