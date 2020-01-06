@@ -191,7 +191,7 @@ void test_string_size()
 
 #endif
 
-#ifdef __SDSCC__ && defined(TEST_SHA_PIPELINED)
+#if defined(__SDSCC__) && defined(TEST_SHA_PIPELINED)
 void test_pipeline()
 {
 	unsigned int* shaout_sw[16];

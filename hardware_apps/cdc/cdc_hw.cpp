@@ -22,7 +22,7 @@
 // #define DEBUG_CDC
 
 // helps for testing out streaming without any other features built
-void output(unsigned char output[4096],hls::stream<unsigned short> &stream)
+void output(unsigned char* output,hls::stream<unsigned short> &stream)
 {
 	int done = 0;
 	int i = 0;
@@ -48,7 +48,8 @@ void output(unsigned char output[4096],hls::stream<unsigned short> &stream)
 }
 
 // helps for testing out streaming without any other features built
-void cdc_hw_interface(const unsigned char input[4096],hls::stream<unsigned short> &interface_stream_out,unsigned int length)
+//void cdc_hw_interface(const unsigned char input[4096],hls::stream<unsigned short> &interface_stream_out,unsigned int length)
+void cdc_hw_interface(const unsigned char* input,hls::stream<unsigned short> &interface_stream_out,unsigned int length)
 {
 	unsigned int i = 0;
 	for(i = 0; i < length-1;i++)
@@ -90,7 +91,7 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 {
     // assign the incoming text to our file block
 	// window is 16 bits to account for the done bit
-//     hls::stream<unsigned short> window;
+//    hls::stream<unsigned short> window;
 // #pragma HLS STREAM variable=window depth=16
     uint16_t window[RAB_POLYNOMIAL_WIN_SIZE];
 #pragma HLS array_partition variable=window complete dim=1
@@ -106,10 +107,10 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
     uint16_t length = RAB_POLYNOMIAL_WIN_SIZE;
     unsigned short done = 0;
 
-#ifdef DEBUG_CDC
+//#ifdef DEBUG_CDC
     uint64_t chunks = 0;
     unsigned int file_length = RAB_POLYNOMIAL_WIN_SIZE;
-#endif
+//#endif
 
 #pragma HLS array_partition variable=polynomial_lookup_buf complete dim=1
 #pragma HLS array_partition variable=prime_table complete dim=1
@@ -122,7 +123,7 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 #pragma HLS pipeline II=1
     	unsigned short in = stream_in.read();
         textHash += (unsigned char)in * polynomial_lookup_buf[(RAB_POLYNOMIAL_WIN_SIZE - 1) - j];
-        // window.write((unsigned char)in);
+//         window.write((unsigned char)in);
         window[write] = (unsigned char)in;
         write = (write == RAB_POLYNOMIAL_WIN_SIZE-1) ? 0 : write+1;
 
@@ -136,7 +137,7 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 #pragma HLS pipeline II=1
         // get incoming and outgoing byte
         new_char = stream_in.read();
-        // old_char = window.read();
+        //old_char = window.read();
         
         old_char = window[read];
         read = (read == RAB_POLYNOMIAL_WIN_SIZE-1) ? 0 : read+1;
@@ -176,16 +177,18 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
         if ((((finger & RAB_BLK_MASK) == 0) || (length == MAX_CHUNK_SIZE)) && (length > MIN_CHUNK_SIZE))
         {
 
-#ifdef DEBUG_CDC
+//#ifdef DEBUG_CDC
             //std::cout << std::endl << "-----" << std::endl<< "chunk size " << length << std::endl;
             chunks++;
-#endif
+//#endif
             length = 0;
             window[write] = (new_char | DONE_BIT_9 | done);
+
         }// found chunk
         else
         {
         	window[write] = (new_char | done);
+        	//window.write(new_char | done);
         }
 
         // store our new char append the chunk bit
@@ -200,8 +203,8 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
     {
 #pragma HLS pipeline II=1
     	stream_out.write(window[read]);
+//    	stream_out.write(window.read());
         read = (read == RAB_POLYNOMIAL_WIN_SIZE-1) ? 0 : read+1;
-        length++;
     }
 
     // account last chunk
@@ -215,7 +218,7 @@ void patternSearch(hls::stream<unsigned short> &stream_in,hls::stream<unsigned s
 #endif
 }
 
-void cdc_top(unsigned char buff[4096],unsigned char outbuff[4096], unsigned int file_length,cdc_test_t* cdc_test_check)
+void cdc_top(unsigned char* buff,unsigned char* outbuff, unsigned int file_length,unsigned int key)
 {
 	static hls::stream<unsigned short> stream;
 #pragma HLS STREAM variable=stream depth=2
@@ -228,6 +231,6 @@ void cdc_top(unsigned char buff[4096],unsigned char outbuff[4096], unsigned int 
 	// http://www.iwar.org.uk/comsec/resources/cipher/sha256-384-512.pdf
 #pragma HLS DATAFLOW
 	cdc_hw_interface(buff,stream,file_length);
-	//patternSearch(stream,stream_out);
+	patternSearch(stream,stream_out);
 	output(outbuff,stream_out);
 }
