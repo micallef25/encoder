@@ -12,7 +12,8 @@
 #endif
 
 #define FILEIN "/home/tzvi/ESE532/Project/code/Test/lorem.test"
-#define FILEOUT "D:/School/Penn/Personal/testfiles/compress.dat"
+#define FILEOUT_DESK "D:/School/Penn/Personal/testfiles/compress.dat"
+#define FILEOUT "C:/school/Penn/SOC/personal/src/src/testfiles/compress.dat"
 
 void Check_error(int Error, const char * Message) {
 	if (Error) {
@@ -22,6 +23,7 @@ void Check_error(int Error, const char * Message) {
 }
 
 void Exit_with_error(void) {
+	printf("exiting\n");
 	perror(NULL);
 	exit(EXIT_FAILURE);
 }
@@ -100,8 +102,8 @@ unsigned int Load_data(unsigned char * Data) {
 	return Bytes_read;
 }
 
-void Store_data(unsigned char * Data, unsigned int Size) {
-	FILE * File = fopen(FILEOUT, "w+");
+void Store_data(unsigned char * Data, unsigned int Size,char* name) {
+	FILE * File = fopen(name, "w+");
 	if (File == NULL)
 		Exit_with_error();
 

@@ -4,6 +4,7 @@
 #include<iostream>
 #include "../sha/sha_testbench.h"
 #include "../cdc/cdc_testbench.h"
+#include "../lzw/lzw_testbench.h"
 #include "../cdc_to_sha/cdc_to_sha_testbench.h"
 
 int main()
@@ -16,7 +17,10 @@ int main()
 	//run_cdc_testbench();
 
 	//
-	run_cdc_to_sha_testbench();
+	//run_cdc_to_sha_testbench();
+
+	//
+	run_lzw_testbench();
 
 	return 0;
 }

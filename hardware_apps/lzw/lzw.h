@@ -1,7 +1,9 @@
 #ifndef LZW_HW
 #define LZW_HW
+
+
 /* HW LZW parameters */
-#define LZW_CODE_BITS				13 // log2(MAX_CHUNK_SIZE) + 1
+#define LZW_CODE_BITS				12 // log2(MAX_CHUNK_SIZE) + 1
 #define LZW_KEY_BITS				(LZW_CODE_BITS + 8)
 // ^^ We encode this as [key|newchar]
 /* LZW CAM parameters */
@@ -20,8 +22,8 @@
 #define HASH_TABLE_ROW_WIDTH		(HASH_TIW * NUM_BUCKETS_PER_HASH)
 #define HASH_TABLE_SIZE				8192
 
-#define MIN_CHUNK_SIZE				2048
-#define MAX_CHUNK_SIZE				8192
+#define MIN_CHUNK_SIZE				512
+#define MAX_CHUNK_SIZE				2048
 
 /* Dummy boundaries (replace?) */
 #ifdef __SDSCC__
@@ -37,5 +39,10 @@
 
 /* Output parameters */
 #define OUTPUT_BITS					13
+
+void do_lzw_hw(const unsigned char cur_chunk[MAX_CHUNK_SIZE],
+			   const int cur_chunk_size,
+			   unsigned char lzw_chunk[MAX_LZW_SIZE],
+			   unsigned int *lzw_size);
 
 #endif

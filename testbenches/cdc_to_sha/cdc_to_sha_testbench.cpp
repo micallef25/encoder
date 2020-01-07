@@ -16,23 +16,17 @@
 #define VMLINUZ "C:/school/Penn/SOC/personal/src/src/testfiles/vmlinuz.tar"
 #define PRINCE "C:/school/Penn/SOC/personal/src/src/testfiles/prince.txt"
 
-<<<<<<< HEAD
-#define large_file 67000123
-=======
+
 #define large_file 24567500
->>>>>>> 8b595632fb67537bd88aedbd2b96e1dcf0352f16
 
 void test_cdc_sha( const char* file )
 {
     //
-<<<<<<< HEAD
 	unsigned int file_size = large_file;
-=======
 	sds_utils::perf_counter hw_ctr;
 	sds_utils::perf_counter sw_ctr;
 	hw_ctr.reset();
 	sw_ctr.reset();
->>>>>>> 8b595632fb67537bd88aedbd2b96e1dcf0352f16
     
     //
 //	FILE* fp = fopen(file,"r+" );
@@ -40,22 +34,13 @@ void test_cdc_sha( const char* file )
 //		perror("fopen error");
 //		return;
 //	}
-<<<<<<< HEAD
-		
-	//
-//	fseek(fp, 0, SEEK_END); // seek to end of file
-//	unsigned int file_size = ftell(fp); // get current file pointer
-//	fseek(fp, 0, SEEK_SET); // seek back to beginning of file
-=======
+
 //
 //	//
 //	fseek(fp, 0, SEEK_END); // seek to end of file
 //	unsigned int file_size = ftell(fp); // get current file pointer
 //	fseek(fp, 0, SEEK_SET); // seek back to beginning of file
 	std::cout << "Running 1 CDC 1 SHA @ 200Mhz with pipelined not unrolled 16 " << large_file << " random bytes" << std::endl;
-
-	unsigned int file_size = large_file;
->>>>>>> 8b595632fb67537bd88aedbd2b96e1dcf0352f16
 
 	//
 	unsigned char* buff = Allocate((sizeof(unsigned char) * file_size ));
@@ -77,11 +62,7 @@ void test_cdc_sha( const char* file )
 	//
 	//unsigned int bytes_read = fread(&buff[0],sizeof(unsigned char),file_size,fp);
 	//printf("bytes_read %llu\n",bytes_read);
-<<<<<<< HEAD
 	for(unsigned int z = 0; z < large_file; z++)
-=======
-	for(unsigned int z= 0; z< large_file; z++)
->>>>>>> 8b595632fb67537bd88aedbd2b96e1dcf0352f16
 	{
 		buff[z] = rand();
 	}
