@@ -294,8 +294,8 @@ while(!done && !end)
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
 	message_loop_1:for (i = 0; i < 16; ++i)
 	{
-#pragma HLS pipeline II=1
-//#pragma HLS unroll factor=2
+//#pragma HLS pipeline II=1
+#pragma HLS unroll factor=16
 		// with a message size of 32 bits we can achieve an II of 1
 		strm_msg =  message_strm_in.read();
 

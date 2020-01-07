@@ -15,29 +15,31 @@
 #define VMLINUZ "C:/school/Penn/SOC/personal/src/src/testfiles/vmlinuz.tar"
 #define PRINCE "C:/school/Penn/SOC/personal/src/src/testfiles/prince.txt"
 
+#define large_file 67000123
+
 void test_cdc_sha( const char* file )
 {
     //
-
+	unsigned int file_size = large_file;
     
     //
-	FILE* fp = fopen(file,"r+" );
-	if(fp == NULL ){
-		perror("fopen error");
-		return;
-	}
+//	FILE* fp = fopen(file,"r+" );
+//	if(fp == NULL ){
+//		perror("fopen error");
+//		return;
+//	}
 		
 	//
-	fseek(fp, 0, SEEK_END); // seek to end of file
-	unsigned int file_size = ftell(fp); // get current file pointer
-	fseek(fp, 0, SEEK_SET); // seek back to beginning of file
+//	fseek(fp, 0, SEEK_END); // seek to end of file
+//	unsigned int file_size = ftell(fp); // get current file pointer
+//	fseek(fp, 0, SEEK_SET); // seek back to beginning of file
 
 	//
 	unsigned char* buff = Allocate((sizeof(unsigned char) * file_size ));
 	if(buff == NULL)
 	{
 		perror("not enough space");
-		fclose(fp);
+		//fclose(fp);
 		return;
 	}
 	//
@@ -45,13 +47,17 @@ void test_cdc_sha( const char* file )
 	if(outbuff == NULL)
 	{
 		perror("not enough space");
-		fclose(fp);
+		//fclose(fp);
 		return;
 	}
 	
 	//
-	unsigned int bytes_read = fread(&buff[0],sizeof(unsigned char),file_size,fp);
-	printf("bytes_read %llu\n",bytes_read);
+	//unsigned int bytes_read = fread(&buff[0],sizeof(unsigned char),file_size,fp);
+	//printf("bytes_read %llu\n",bytes_read);
+	for(unsigned int z = 0; z < large_file; z++)
+	{
+		buff[z] = rand();
+	}
 
 	Rabin* rks = new Rabin;
 	cdc_test_t* test_ptr = new cdc_test_t;
