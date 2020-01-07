@@ -12,6 +12,7 @@
 void sha_hw(unsigned char input[MAX_BUFF_SIZE],unsigned int output[8], int length);
 
 // for cdc to sha
-void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[11160*8]);
+//void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[11160*8]);
+void sha_hw_stream(hls::stream<unsigned short> &data_stream,hls::stream<unsigned long long> &out_stream);
 
 #endif

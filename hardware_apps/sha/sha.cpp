@@ -39,16 +39,19 @@
 
 
 // write back stage
-void sha_out(unsigned int output[8*30000], hls::stream<uint33_t> &out_stream)
+//void sha_out(unsigned int output[8*30000], hls::stream<uint33_t> &out_stream)
+void sha_out(unsigned int* output, hls::stream<uint33_t> &out_stream)
 {
 	uint33_t done = 0;
 	unsigned int k = 0;
-	while(!done){
-#pragma HLS LOOP_TRIPCOUNT min=1 max=1
-	for(unsigned int i=0; i < 8;i++)
+	end_loop:while(!done)
 	{
-		output[i+(k*8)] = out_stream.read();
-	}
+	#pragma HLS LOOP_TRIPCOUNT min=1 max=1
+		for(unsigned int i=0; i < 8;i++)
+		{
+#pragma HLS pipeline II=1
+			output[i+(k*8)] = out_stream.read();
+		}
 	done = out_stream.read();
 	k++;
 	//#ifdef DEBUG
@@ -91,7 +94,8 @@ void producer(hls::stream<unsigned short> &producer_stream_in, hls::stream<uint3
 
 	// we can pump in messages fine.
 	// change the granularity maybe we can read in 16 bits instead of 8
-	while(!end){
+while(!end)
+	{
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
 	produce_message:while(!done && !end)
 	{
@@ -105,13 +109,13 @@ void producer(hls::stream<unsigned short> &producer_stream_in, hls::stream<uint3
 		// extract the bit if it exists
 		done = strm_msg & DONE_BIT_9;
 
-#ifdef DEBUG
+//#ifdef DEBUG
 // std::cout << (char)strm_msg;
 if(done != 0){
 	chunks++;
-printf("done bit found %d : %d\n",digest_length,chunks);
+//printf("done bit found %d : %d\n",digest_length,chunks);
 }
-#endif
+//#endif
 
 		// clear bit
 		strm_msg &= ~DONE_BIT_9;
@@ -284,12 +288,12 @@ void message_prepare(hls::stream<uint33_t> &message_strm_in,hls::stream<uint33_t
 	
 	uint33_t done = 0;
 	uint33_t strm_msg = 0;
-	uint33_t end = 0;
+	uint33_t message_prepare_end = 0;
 
 #pragma HLS array_partition variable=m complete dim=1
-while(!end){
+while(!message_prepare_end){
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
-while(!done && !end)
+while(!done && !message_prepare_end)
 {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
 	message_loop_1:for (i = 0; i < 16; ++i)
@@ -306,7 +310,7 @@ while(!done && !end)
 		strm_msg &= ~DONE_BIT_33;
 
 		// extract the bit if it exists
-		end = strm_msg & DONE_BIT_34;
+		message_prepare_end = strm_msg & DONE_BIT_34;
 
 		// clear the bit so it does not propagate early
 		strm_msg &= ~DONE_BIT_34;
@@ -353,8 +357,8 @@ while(!done && !end)
 	}
 
 // save a mux by no if else
-	unsigned int message = SIG1(m[63 - 2]) + m[63 - 7] + SIG0(m[63 - 15]) + m[i - 16];
-	message_stream_out.write(message | done | end);
+	unsigned long long message = SIG1(m[63 - 2]) + m[63 - 7] + SIG0(m[63 - 15]) + m[63 - 16];
+	message_stream_out.write(message | done | message_prepare_end);
 	done = 0;
 }
 }
@@ -364,7 +368,7 @@ while(!done && !end)
 *
 *
 */
-void transform(hls::stream<uint33_t> &transform_stream_in, unsigned int state[8], hls::stream<uint33_t> &transform_strm_out)
+void transform(hls::stream<uint33_t> &transform_stream_in, hls::stream<uint33_t> &transform_strm_out)
 {
 	const unsigned int k[64] = 
 	{
@@ -377,6 +381,19 @@ void transform(hls::stream<uint33_t> &transform_stream_in, unsigned int state[8]
 				0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
 				0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 	};
+	unsigned int state[8];
+	#pragma HLS array_partition variable=state complete dim=1
+
+	// initial hashes to begin with
+	// rest are hash-1 we need to eventually reset this
+	state[0] = 0x6a09e667;
+	state[1] = 0xbb67ae85;
+	state[2] = 0x3c6ef372;
+	state[3] = 0xa54ff53a;
+	state[4] = 0x510e527f;
+	state[5] = 0x9b05688c;
+	state[6] = 0x1f83d9ab;
+	state[7] = 0x5be0cd19;
 #pragma HLS array_partition variable=k complete dim=1
 
 	unsigned int a, b, c, d, e, f, g, h, i;
@@ -384,12 +401,12 @@ void transform(hls::stream<uint33_t> &transform_stream_in, unsigned int state[8]
 	uint33_t done = 0;
 	uint33_t strm_msg = 0;
 	unsigned int transforms=0;
-	uint33_t end = 0;
+	uint33_t transform_end = 0;
 
 	// done bit is set when the last byte arrived
-while(!end){
+while(!transform_end){
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1
-	transform_iters:while(!done && !end)
+	transform_iters:while(!done && !transform_end)
 	{
 	#pragma HLS LOOP_TRIPCOUNT min=1 max=1
 
@@ -428,7 +445,7 @@ while(!end){
 			strm_msg &= ~DONE_BIT_33;
 
 			// extract the bit if it exists
-			end = strm_msg & DONE_BIT_34;
+			transform_end = strm_msg & DONE_BIT_34;
 
 			// clear the bit so it does not propagate early
 			strm_msg &= ~DONE_BIT_34;
@@ -463,7 +480,7 @@ while(!end){
 		}// loop
 
 		// reset state array here probably
-		if(done || end)
+		if(done || transform_end)
 		{
 	//#ifdef DEBUG
 	//	printf("writing output %d \n",transforms);
@@ -476,7 +493,7 @@ while(!end){
 			transform_strm_out.write(state[5] += f);
 			transform_strm_out.write(state[6] += g);
 			transform_strm_out.write(state[7] += h);
-			transform_strm_out.write(end);
+			transform_strm_out.write(transform_end);
 			state[0] = 0x6a09e667;
 			state[1] = 0xbb67ae85;
 			state[2] = 0x3c6ef372;
@@ -510,20 +527,6 @@ while(!end){
 */
 void sha_hw(unsigned char input[MAX_BUFF_SIZE],unsigned int output[8], int length){
 
-	unsigned int state[8];
-	#pragma HLS array_partition variable=state complete dim=1
-
-	// initial hashes to begin with
-	// rest are hash-1 we need to eventually reset this
-	state[0] = 0x6a09e667;
-	state[1] = 0xbb67ae85;
-	state[2] = 0x3c6ef372;
-	state[3] = 0xa54ff53a;
-	state[4] = 0x510e527f;
-	state[5] = 0x9b05688c;
-	state[6] = 0x1f83d9ab;
-	state[7] = 0x5be0cd19;
-
 	static hls::stream<uint10_t> data_stream;
 #pragma HLS STREAM variable=data_stream depth=2
 
@@ -543,39 +546,21 @@ void sha_hw(unsigned char input[MAX_BUFF_SIZE],unsigned int output[8], int lengt
 	hw_interface(input,data_stream,length);
 	producer(data_stream,sha_stream);
 	message_prepare(sha_stream,message_stream);
-	transform(message_stream,&state[0],out_state);
-	//sha_out(&output[0],out_state);
+	transform(message_stream,out_state);
+	sha_out(&output[0],out_state);
 }
 
 
 /*
 * given a string produce a sha256 bit hash
 */
-void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[8*30000]){
-
-	unsigned int state[8];
-	#pragma HLS array_partition variable=state complete dim=1
-
-	// initial hashes to begin with
-	// rest are hash-1 we need to eventually reset this
-	state[0] = 0x6a09e667;
-	state[1] = 0xbb67ae85;
-	state[2] = 0x3c6ef372;
-	state[3] = 0xa54ff53a;
-	state[4] = 0x510e527f;
-	state[5] = 0x9b05688c;
-	state[6] = 0x1f83d9ab;
-	state[7] = 0x5be0cd19;
-
-
-	static hls::stream<uint33_t> sha_stream;
-#pragma HLS STREAM variable=sha_stream depth=2
-
-	static hls::stream<uint33_t> message_stream;
-#pragma HLS STREAM variable=message_stream depth=2
-
-	static hls::stream<uint33_t> out_state;
-#pragma HLS STREAM variable=out_state depth=1
+//void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[8*30000])
+void sha_hw_stream(hls::stream<unsigned short> &data_stream,hls::stream<unsigned long long> &out_stream)
+{
+	hls::stream<uint33_t> sha_stream;
+#pragma HLS STREAM variable=sha_stream depth=4096
+	hls::stream<uint33_t> message_stream;
+#pragma HLS STREAM variable=message_stream depth=4096
 
 
 	// stream data into modules to compute sha256 digest
@@ -583,6 +568,5 @@ void sha_hw_stream(hls::stream<unsigned short> &data_stream,unsigned int output[
 #pragma HLS DATAFLOW
 	producer(data_stream,sha_stream);
 	message_prepare(sha_stream,message_stream);
-	transform(message_stream,&state[0],out_state);
-	sha_out(&output[0],out_state);
+	transform(message_stream,out_stream);
 }
